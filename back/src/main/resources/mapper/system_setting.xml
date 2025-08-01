@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wwy.Mapper.SystemSettingMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.wwy.Entity.SystemSetting">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="setting_key" property="settingKey" jdbcType="VARCHAR"/>
+        <result column="setting_value" property="settingValue" jdbcType="LONGVARCHAR"/>
+        <result column="setting_type" property="settingType" jdbcType="VARCHAR"/>
+        <result column="description" property="description" jdbcType="VARCHAR"/>
+        <result column="created_at" property="createdAt" jdbcType="TIMESTAMP"/>
+        <result column="updated_at" property="updatedAt" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 通用字段 -->
+    <sql id="Base_Column_List">
+        id, setting_key, setting_value, setting_type, description, created_at, updated_at
+    </sql>
+
+    <!-- 获取所有设置 -->
+    <select id="getAllSettings" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM system_settings
+        ORDER BY setting_type, setting_key
+    </select>
+
+    <!-- 根据设置键获取设置 -->
+    <select id="getSettingByKey" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM system_settings
+        WHERE setting_key = #{settingKey}
+    </select>
+
+    <!-- 根据设置类型获取设置列表 -->
+    <select id="getSettingsByType" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM system_settings
+        WHERE setting_type = #{settingType}
+        ORDER BY setting_key
+    </select>
+
+    <!-- 插入设置 -->
+    <insert id="insertSetting" parameterType="com.wwy.Entity.SystemSetting" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO system_settings (setting_key, setting_value, setting_type, description, created_at, updated_at)
+        VALUES (#{settingKey}, #{settingValue}, #{settingType}, #{description}, NOW(), NOW())
+    </insert>
+
+    <!-- 更新设置 -->
+    <update id="updateSetting" parameterType="com.wwy.Entity.SystemSetting">
+        UPDATE system_settings
+        SET setting_value = #{settingValue},
+            setting_type = #{settingType},
+            description = #{description},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 根据键更新设置值 -->
+    <update id="updateSettingByKey">
+        UPDATE system_settings
+        SET setting_value = #{settingValue},
+            updated_at = NOW()
+        WHERE setting_key = #{settingKey}
+    </update>
+
+    <!-- 删除设置 -->
+    <delete id="deleteSetting">
+        DELETE FROM system_settings WHERE id = #{id}
+    </delete>
+
+    <!-- 根据键删除设置 -->
+    <delete id="deleteSettingByKey">
+        DELETE FROM system_settings WHERE setting_key = #{settingKey}
+    </delete>
+
+    <!-- 批量插入或更新设置 -->
+    <insert id="batchUpsertSettings">
+        INSERT INTO system_settings (setting_key, setting_value, setting_type, description, created_at, updated_at)
+        VALUES
+        <foreach collection="settings" item="item" separator=",">
+            (#{item.settingKey}, #{item.settingValue}, #{item.settingType}, #{item.description}, NOW(), NOW())
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+        setting_value = VALUES(setting_value),
+        setting_type = VALUES(setting_type),
+        description = VALUES(description),
+        updated_at = NOW()
+    </insert>
+
+</mapper> 

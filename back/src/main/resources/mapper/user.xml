@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.wwy.Mapper.UserMapper">
+
+    <!-- 用户结果映射，包含角色信息 -->
+    <resultMap id="UserWithRolesResultMap" type="com.wwy.Entity.User">
+        <id property="uid" column="uid"/>
+        <result property="username" column="username"/>
+        <result property="password" column="password"/>
+        <result property="gender" column="gender"/>
+        <result property="email" column="email"/>
+        <result property="avatar" column="avatar"/>
+        <result property="phone" column="phone"/>
+        <result property="address" column="address"/>
+        <result property="age" column="age"/>
+        <result property="bio" column="bio"/>
+        <result property="status" column="status"/>
+        <result property="roleName" column="role_name"/>
+        <collection property="roles" ofType="com.wwy.Entity.Role">
+            <id property="id" column="role_id"/>
+            <result property="name" column="role_name"/>
+            <result property="description" column="role_description"/>
+            <result property="code" column="role_code"/>
+            <result property="status" column="role_status"/>
+        </collection>
+    </resultMap>
+
+    <!-- 由于使用了BCrypt，不再需要这个方法 -->
+    <select id="findByUsername" resultType="com.wwy.Entity.User">
+        select * from user where username = #{username} /* USE INDEX(idx_username) */
+    </select>
+    
+    <!-- 根据邮箱查找用户 -->
+    <select id="findByEmail" resultType="com.wwy.Entity.User">
+        select * from user where email = #{email} LIMIT 1
+    </select>
+    
+    <!-- 检查邮箱是否存在 -->
+    <select id="countByEmail" resultType="int">
+        select count(*) from user where email = #{email}
+    </select>
+    
+    <insert id="insertUser" parameterType="com.wwy.Entity.User">
+        insert into user (username, password, gender, email, avatar, phone, address, age, bio, status) 
+        values (#{username}, #{password}, #{gender}, #{email}, #{avatar}, #{phone}, #{address}, #{age}, #{bio}, #{status})
+    </insert>
+    
+    <select id="listUsers" resultType="com.wwy.Entity.User">
+        select * from user order by uid asc limit #{offset}, #{pageSize}
+    </select>
+    
+    <select id="countUsers" resultType="int">
+        select count(*) from user
+    </select>
+    
+    <select id="getUserById" resultType="com.wwy.Entity.User">
+        select * from user where uid = #{uid}
+    </select>
+    
+    <update id="updateUser" parameterType="com.wwy.Entity.User">
+        update user
+        <set>
+            <if test="username != null">username = #{username},</if>
+            <if test="password != null">password = #{password},</if>
+            <if test="gender != null">gender = #{gender},</if>
+            <if test="email != null">email = #{email},</if>
+            <if test="avatar != null">avatar = #{avatar},</if>
+            <if test="phone != null">phone = #{phone},</if>
+            <if test="address != null">address = #{address},</if>
+            <if test="age != null">age = #{age},</if>
+            <if test="bio != null">bio = #{bio},</if>
+            <if test="status != null">status = #{status},</if>
+        </set>
+        where uid = #{uid}
+    </update>
+    
+    <!-- 删除用户 -->
+    <delete id="deleteUser">
+        delete from user where uid = #{uid}
+    </delete>
+    
+    <!-- 多条件搜索用户 -->
+    <select id="searchUsers" resultType="com.wwy.Entity.User">
+        select u.* from user u
+        <if test="roleId != null">
+            join user_role ur on u.uid = ur.user_id
+            where ur.role_id = #{roleId}
+            <if test="keyword != null and keyword != ''">
+                AND (u.username like CONCAT('%', #{keyword}, '%') 
+                OR u.email like CONCAT('%', #{keyword}, '%') 
+                OR u.phone like CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="status != null and status != ''">
+                AND u.status = #{status}
+            </if>
+            <if test="gender != null and gender != ''">
+                AND u.gender = #{gender}
+            </if>
+        </if>
+        <if test="roleId == null">
+            <where>
+                <if test="keyword != null and keyword != ''">
+                    (u.username like CONCAT('%', #{keyword}, '%') 
+                    OR u.email like CONCAT('%', #{keyword}, '%') 
+                    OR u.phone like CONCAT('%', #{keyword}, '%'))
+                </if>
+                <if test="status != null and status != ''">
+                    AND u.status = #{status}
+                </if>
+                <if test="gender != null and gender != ''">
+                    AND u.gender = #{gender}
+                </if>
+            </where>
+        </if>
+        order by u.uid asc
+        limit #{offset}, #{pageSize}
+    </select>
+    
+    <!-- 统计搜索结果总数 -->
+    <select id="countSearchUsers" resultType="int">
+        select count(*) from user u
+        <if test="roleId != null">
+            join user_role ur on u.uid = ur.user_id
+            where ur.role_id = #{roleId}
+            <if test="keyword != null and keyword != ''">
+                AND (u.username like CONCAT('%', #{keyword}, '%') 
+                OR u.email like CONCAT('%', #{keyword}, '%') 
+                OR u.phone like CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="status != null and status != ''">
+                AND u.status = #{status}
+            </if>
+            <if test="gender != null and gender != ''">
+                AND u.gender = #{gender}
+            </if>
+        </if>
+        <if test="roleId == null">
+            <where>
+                <if test="keyword != null and keyword != ''">
+                    (u.username like CONCAT('%', #{keyword}, '%') 
+                    OR u.email like CONCAT('%', #{keyword}, '%') 
+                    OR u.phone like CONCAT('%', #{keyword}, '%'))
+                </if>
+                <if test="status != null and status != ''">
+                    AND u.status = #{status}
+                </if>
+                <if test="gender != null and gender != ''">
+                    AND u.gender = #{gender}
+                </if>
+            </where>
+        </if>
+    </select>
+
+    <!-- 批量删除用户 -->
+    <delete id="batchDeleteUsers">
+        DELETE FROM user WHERE uid IN
+        <foreach collection="uids" item="uid" open="(" separator="," close=")">
+            #{uid}
+        </foreach>
+    </delete>
+    
+    <!-- 查询拥有指定角色的所有用户 -->
+    <select id="getUsersByRoleId" resultType="com.wwy.Entity.User">
+        SELECT u.*
+        FROM user u
+        JOIN user_role ur ON u.uid = ur.user_id
+        WHERE ur.role_id = #{roleId}
+        ORDER BY u.uid ASC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+    
+    <!-- 统计拥有指定角色的用户数量 -->
+    <select id="countUsersByRoleId" resultType="int">
+        SELECT COUNT(*)
+        FROM user u
+        JOIN user_role ur ON u.uid = ur.user_id
+        WHERE ur.role_id = #{roleId}
+    </select>
+    
+    <!-- 获取用户及其角色信息 -->
+    <select id="getUserWithRoles" resultMap="UserWithRolesResultMap">
+        SELECT u.*, r.id as role_id, r.name as role_name, r.description as role_description, 
+               r.code as role_code, r.status as role_status
+        FROM user u
+        LEFT JOIN user_role ur ON u.uid = ur.user_id
+        LEFT JOIN role r ON ur.role_id = r.id
+        WHERE u.uid = #{uid}
+    </select>
+    
+    <!-- 查询所有用户及其角色信息 -->
+    <select id="listUsersWithRoles" resultMap="UserWithRolesResultMap">
+        SELECT u.*, r.id as role_id, r.name as role_name, r.description as role_description, 
+               r.code as role_code, r.status as role_status
+        FROM user u
+        LEFT JOIN user_role ur ON u.uid = ur.user_id
+        LEFT JOIN role r ON ur.role_id = r.id
+        ORDER BY u.uid ASC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+    
+    <!-- 新的精确搜索用户方法 -->
+    <select id="searchUsersWithRoles" resultMap="UserWithRolesResultMap">
+        SELECT u.*, r.id as role_id, r.name as role_name, r.description as role_description, 
+               r.code as role_code, r.status as role_status
+        FROM user u
+        LEFT JOIN user_role ur ON u.uid = ur.user_id
+        LEFT JOIN role r ON ur.role_id = r.id
+        <where>
+            <if test="username != null and username != ''">
+                AND u.username LIKE CONCAT('%', #{username}, '%')
+            </if>
+            <if test="email != null and email != ''">
+                AND u.email LIKE CONCAT('%', #{email}, '%')
+            </if>
+            <if test="status != null and status != ''">
+                AND u.status = #{status}
+            </if>
+            <if test="roleId != null">
+                AND r.id = #{roleId}
+            </if>
+        </where>
+        ORDER BY u.uid ASC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+    
+    <!-- 统计新搜索方法的结果数量 -->
+    <select id="countSearchUsersWithRoles" resultType="int">
+        SELECT COUNT(DISTINCT u.uid)
+        FROM user u
+        LEFT JOIN user_role ur ON u.uid = ur.user_id
+        LEFT JOIN role r ON ur.role_id = r.id
+        <where>
+            <if test="username != null and username != ''">
+                AND u.username LIKE CONCAT('%', #{username}, '%')
+            </if>
+            <if test="email != null and email != ''">
+                AND u.email LIKE CONCAT('%', #{email}, '%')
+            </if>
+            <if test="status != null and status != ''">
+                AND u.status = #{status}
+            </if>
+            <if test="roleId != null">
+                AND r.id = #{roleId}
+            </if>
+        </where>
+    </select>
+</mapper>

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wwy.Mapper.RoleMapper">
+    
+    <!-- 角色结果映射 -->
+    <resultMap id="RoleResultMap" type="com.wwy.Entity.Role">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="description" column="description"/>
+        <result property="code" column="code"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+    
+    <!-- 根据ID查询角色 -->
+    <select id="getRoleById" resultMap="RoleResultMap">
+        SELECT * FROM role WHERE id = #{id}
+    </select>
+    
+    <!-- 查询所有角色 -->
+    <select id="getAllRoles" resultMap="RoleResultMap">
+        SELECT * FROM role ORDER BY id
+    </select>
+    
+    <!-- 根据角色名查询角色 -->
+    <select id="getRoleByName" resultMap="RoleResultMap">
+        SELECT * FROM role WHERE name = #{name}
+    </select>
+    
+    <!-- 根据角色代码查询角色 -->
+    <select id="getRoleByCode" resultMap="RoleResultMap">
+        SELECT * FROM role WHERE code = #{code}
+    </select>
+    
+    <!-- 新增角色 -->
+    <insert id="addRole" parameterType="com.wwy.Entity.Role" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO role (name, description, code, status, create_time, update_time)
+        VALUES (#{name}, #{description}, #{code}, #{status}, #{createTime}, #{updateTime})
+    </insert>
+    
+    <!-- 更新角色 -->
+    <update id="updateRole" parameterType="com.wwy.Entity.Role">
+        UPDATE role
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="code != null">code = #{code},</if>
+            <if test="status != null">status = #{status},</if>
+            update_time = #{updateTime}
+        </set>
+        WHERE id = #{id}
+    </update>
+    
+    <!-- 删除角色 -->
+    <delete id="deleteRole">
+        DELETE FROM role WHERE id = #{id}
+    </delete>
+    
+    <!-- 根据用户ID查询该用户的所有角色 -->
+    <select id="getRolesByUserId" resultMap="RoleResultMap">
+        SELECT r.*
+        FROM role r
+        JOIN user_role ur ON r.id = ur.role_id
+        WHERE ur.user_id = #{userId}
+    </select>
+</mapper> 

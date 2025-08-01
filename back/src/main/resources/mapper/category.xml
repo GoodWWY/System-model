@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wwy.Mapper.CategoryMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.wwy.Entity.Category">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="description" property="description" jdbcType="VARCHAR"/>
+        <result column="slug" property="slug" jdbcType="VARCHAR"/>
+        <result column="parent_id" property="parentId" jdbcType="INTEGER"/>
+        <result column="sort_order" property="sortOrder" jdbcType="INTEGER"/>
+        <result column="icon" property="icon" jdbcType="VARCHAR"/>
+        <result column="color" property="color" jdbcType="VARCHAR"/>
+        <result column="is_enabled" property="isEnabled" jdbcType="BOOLEAN"/>
+        <result column="article_count" property="articleCount" jdbcType="INTEGER"/>
+        <result column="created_at" property="createdAt" jdbcType="TIMESTAMP"/>
+        <result column="updated_at" property="updatedAt" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 通用字段 -->
+    <sql id="Base_Column_List">
+        id, name, description, slug, parent_id, sort_order, icon, color,
+        is_enabled, article_count, created_at, updated_at
+    </sql>
+
+    <!-- 根据ID获取分类 -->
+    <select id="getCategoryById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM categories
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据名称获取分类 -->
+    <select id="getCategoryByName" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM categories
+        WHERE name = #{name}
+    </select>
+
+    <!-- 根据别名获取分类 -->
+    <select id="getCategoryBySlug" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM categories
+        WHERE slug = #{slug}
+    </select>
+
+    <!-- 获取所有分类列表 -->
+    <select id="getAllCategories" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM categories
+        ORDER BY sort_order ASC, created_at ASC
+    </select>
+
+    <!-- 获取启用的分类列表 -->
+    <select id="getEnabledCategories" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM categories
+        WHERE is_enabled = 1
+        ORDER BY sort_order ASC, created_at ASC
+    </select>
+
+    <!-- 根据父级ID获取分类列表 -->
+    <select id="getCategoriesByParent" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM categories
+        WHERE parent_id = #{parentId}
+        ORDER BY sort_order ASC, created_at ASC
+    </select>
+
+    <!-- 搜索分类 -->
+    <select id="searchCategories" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM categories
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (name LIKE CONCAT('%', #{keyword}, '%') OR description LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="isEnabled != null">
+                AND is_enabled = #{isEnabled}
+            </if>
+        </where>
+        ORDER BY sort_order ASC, created_at ASC
+        <if test="offset != null and pageSize != null">
+            LIMIT #{offset}, #{pageSize}
+        </if>
+    </select>
+
+    <!-- 获取搜索分类总数 -->
+    <select id="countSearchCategories" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM categories
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (name LIKE CONCAT('%', #{keyword}, '%') OR description LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="isEnabled != null">
+                AND is_enabled = #{isEnabled}
+            </if>
+        </where>
+    </select>
+
+    <!-- 插入分类 -->
+    <insert id="insertCategory" parameterType="com.wwy.Entity.Category" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO categories (
+            name, description, slug, parent_id, sort_order, icon, color,
+            is_enabled, article_count, created_at, updated_at
+        ) VALUES (
+            #{name}, #{description}, #{slug}, #{parentId}, #{sortOrder}, #{icon}, #{color},
+            #{isEnabled}, #{articleCount}, NOW(), NOW()
+        )
+    </insert>
+
+    <!-- 更新分类 -->
+    <update id="updateCategory" parameterType="com.wwy.Entity.Category">
+        UPDATE categories
+        SET name = #{name},
+            description = #{description},
+            slug = #{slug},
+            parent_id = #{parentId},
+            sort_order = #{sortOrder},
+            icon = #{icon},
+            color = #{color},
+            is_enabled = #{isEnabled},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 删除分类 -->
+    <delete id="deleteCategory">
+        DELETE FROM categories WHERE id = #{id}
+    </delete>
+
+    <!-- 批量删除分类 -->
+    <delete id="batchDeleteCategories">
+        DELETE FROM categories
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 更新分类状态 -->
+    <update id="updateCategoryStatus">
+        UPDATE categories
+        SET is_enabled = #{isEnabled},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 更新分类文章数量 -->
+    <update id="updateArticleCount">
+        UPDATE categories
+        SET article_count = #{count},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 增加分类文章数量 -->
+    <update id="incrementArticleCount">
+        UPDATE categories
+        SET article_count = article_count + 1,
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 减少分类文章数量 -->
+    <update id="decrementArticleCount">
+        UPDATE categories
+        SET article_count = GREATEST(article_count - 1, 0),
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 获取分类树形结构 -->
+    <select id="getCategoryTree" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM categories
+        WHERE is_enabled = 1
+        ORDER BY parent_id ASC, sort_order ASC, created_at ASC
+    </select>
+
+    <!-- 检查分类名称是否存在 -->
+    <select id="checkCategoryNameExists" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM categories
+        WHERE name = #{name}
+        <if test="excludeId != null">
+            AND id != #{excludeId}
+        </if>
+    </select>
+
+    <!-- 检查分类别名是否存在 -->
+    <select id="checkCategorySlugExists" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM categories
+        WHERE slug = #{slug}
+        <if test="excludeId != null">
+            AND id != #{excludeId}
+        </if>
+    </select>
+
+</mapper> 

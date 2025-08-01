@@ -1,0 +1,82 @@
+spring:
+  mail:
+    host: smtp.qq.com
+    port: 465
+    username: 1781939957@qq.com
+    password: dyesljdgiujldaib  # 1781939957@qq.com的授权码
+    protocol: smtps
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          ssl:
+            enable: true
+          auth: true
+          starttls:
+            enable: true
+            required: true
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/demo?serverTimezone=GMT%2b8 #设置时区
+    username: root
+    password: 123456
+  web:
+    resources:
+      static-locations:
+        - classpath:/static/
+        - file:./front/public/
+        - file:./uploads/
+      cache:
+        period: 0
+  mvc:
+    static-path-pattern: /**
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+  # Redis配置
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: # 如果有密码请填写
+      database: 0
+      timeout: 5000ms
+      lettuce:
+        pool:
+          max-active: 20
+          max-wait: -1ms
+          max-idle: 10
+          min-idle: 0
+  # 缓存配置
+  cache:
+    type: redis
+    redis:
+      time-to-live: 3600000 # 1小时，单位毫秒
+      cache-null-values: false
+
+server:
+  port: 8081
+
+mybatis:
+  #mapper文件位置
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.wwy.Entity
+  configuration:
+    #驼峰命名
+    map-underscore-to-camel-case: true
+
+# JWT配置
+jwt:
+  secret: ${JWT_SECRET:YourSecureSecretKey123!@#$%^&*()}
+  expiration: 86400000 # 1天，单位毫秒
+
+aliyun:
+  oss:
+    endpoint: https://oss-cn-beijing.aliyuncs.com
+    accessKeyId: ${ALIYUN_ACCESS_KEY_ID:your-access-key-id}
+    accessKeySecret: ${ALIYUN_ACCESS_KEY_SECRET:your-access-key-secret}
+    bucketName: ${ALIYUN_OSS_BUCKET:your-bucket-name}
+qwen:
+  api-key: ${QWEN_API_KEY:your-qwen-api-key}
+  api-url: https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions

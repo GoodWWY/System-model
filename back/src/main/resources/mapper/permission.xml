@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.wwy.Mapper.PermissionMapper">
+
+    <!-- 基础字段映射 -->
+    <resultMap id="BaseResultMap" type="com.wwy.Entity.Permission">
+        <id property="id" column="id" jdbcType="INTEGER"/>
+        <result property="name" column="name" jdbcType="VARCHAR"/>
+        <result property="code" column="code" jdbcType="VARCHAR"/>
+        <result property="description" column="description" jdbcType="VARCHAR"/>
+        <result property="resource" column="resource" jdbcType="VARCHAR"/>
+        <result property="action" column="action" jdbcType="VARCHAR"/>
+        <result property="category" column="category" jdbcType="VARCHAR"/>
+        <result property="parentId" column="parent_id" jdbcType="INTEGER"/>
+        <result property="sortOrder" column="sort_order" jdbcType="INTEGER"/>
+        <result property="isEnabled" column="is_enabled" jdbcType="BOOLEAN"/>
+        <result property="createdAt" column="created_at" jdbcType="TIMESTAMP"/>
+        <result property="updatedAt" column="updated_at" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, name, code, description, resource, action, category, parent_id, sort_order, is_enabled, created_at, updated_at
+    </sql>
+
+    <!-- 根据ID获取权限 -->
+    <select id="getPermissionById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM permissions
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据权限编码获取权限 -->
+    <select id="getPermissionByCode" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM permissions
+        WHERE code = #{code}
+    </select>
+
+    <!-- 获取所有权限列表 -->
+    <select id="getAllPermissions" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM permissions
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
+    <!-- 获取启用的权限列表 -->
+    <select id="getEnabledPermissions" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM permissions
+        WHERE is_enabled = 1
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
+    <!-- 根据父权限ID获取子权限列表 -->
+    <select id="getPermissionsByParent" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM permissions
+        WHERE parent_id = #{parentId}
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
+    <!-- 根据分类获取权限列表 -->
+    <select id="getPermissionsByCategory" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM permissions
+        WHERE category = #{category}
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
+    <!-- 搜索权限 -->
+    <select id="searchPermissions" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM permissions
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (name LIKE CONCAT('%', #{keyword}, '%') 
+                OR code LIKE CONCAT('%', #{keyword}, '%')
+                OR description LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="category != null and category != ''">
+                AND category = #{category}
+            </if>
+            <if test="isEnabled != null">
+                AND is_enabled = #{isEnabled}
+            </if>
+        </where>
+        ORDER BY sort_order ASC, id ASC
+        <if test="offset != null and limit != null">
+            LIMIT #{offset}, #{limit}
+        </if>
+    </select>
+
+    <!-- 统计搜索权限数量 -->
+    <select id="countSearchPermissions" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM permissions
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (name LIKE CONCAT('%', #{keyword}, '%') 
+                OR code LIKE CONCAT('%', #{keyword}, '%')
+                OR description LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="category != null and category != ''">
+                AND category = #{category}
+            </if>
+            <if test="isEnabled != null">
+                AND is_enabled = #{isEnabled}
+            </if>
+        </where>
+    </select>
+
+    <!-- 获取权限树形结构 -->
+    <select id="getPermissionTree" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM permissions
+        WHERE is_enabled = 1
+        ORDER BY parent_id ASC, sort_order ASC, id ASC
+    </select>
+
+    <!-- 根据角色ID获取权限列表 -->
+    <select id="getPermissionsByRoleId" resultMap="BaseResultMap">
+        SELECT p.id, p.name, p.code, p.description, p.resource, p.action, p.category, 
+               p.parent_id, p.sort_order, p.is_enabled, p.created_at, p.updated_at
+        FROM permissions p
+        INNER JOIN role_permissions rp ON p.id = rp.permission_id
+        WHERE rp.role_id = #{roleId} AND p.is_enabled = 1
+        ORDER BY p.sort_order ASC, p.id ASC
+    </select>
+
+    <!-- 根据用户ID获取权限列表（通过角色） -->
+    <select id="getPermissionsByUserId" resultMap="BaseResultMap">
+        SELECT DISTINCT p.id, p.name, p.code, p.description, p.resource, p.action, p.category, 
+               p.parent_id, p.sort_order, p.is_enabled, p.created_at, p.updated_at
+        FROM permissions p
+        INNER JOIN role_permissions rp ON p.id = rp.permission_id
+        INNER JOIN user_role ur ON rp.role_id = ur.role_id
+        WHERE ur.user_id = #{userId} AND p.is_enabled = 1
+        ORDER BY p.sort_order ASC, p.id ASC
+    </select>
+
+    <!-- 插入权限 -->
+    <insert id="insertPermission" parameterType="com.wwy.Entity.Permission" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO permissions (name, code, description, resource, action, category, parent_id, sort_order, is_enabled)
+        VALUES (#{name}, #{code}, #{description}, #{resource}, #{action}, #{category}, #{parentId}, #{sortOrder}, #{isEnabled})
+    </insert>
+
+    <!-- 更新权限 -->
+    <update id="updatePermission" parameterType="com.wwy.Entity.Permission">
+        UPDATE permissions
+        <set>
+            <if test="name != null and name != ''">name = #{name},</if>
+            <if test="code != null and code != ''">code = #{code},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="resource != null">resource = #{resource},</if>
+            <if test="action != null">action = #{action},</if>
+            <if test="category != null">category = #{category},</if>
+            <if test="parentId != null">parent_id = #{parentId},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
+            <if test="isEnabled != null">is_enabled = #{isEnabled},</if>
+            updated_at = CURRENT_TIMESTAMP
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 删除权限 -->
+    <delete id="deletePermission">
+        DELETE FROM permissions WHERE id = #{id}
+    </delete>
+
+    <!-- 批量删除权限 -->
+    <delete id="batchDeletePermissions">
+        DELETE FROM permissions WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 更新权限状态 -->
+    <update id="updatePermissionStatus">
+        UPDATE permissions 
+        SET is_enabled = #{isEnabled}, updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+
+    <!-- 批量更新权限状态 -->
+    <update id="batchUpdatePermissionStatus">
+        UPDATE permissions 
+        SET is_enabled = #{isEnabled}, updated_at = CURRENT_TIMESTAMP
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- 检查权限编码是否存在 -->
+    <select id="checkPermissionCodeExists" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM permissions
+        WHERE code = #{code}
+        <if test="excludeId != null">
+            AND id != #{excludeId}
+        </if>
+    </select>
+
+    <!-- 检查是否有子权限 -->
+    <select id="countChildPermissions" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM permissions
+        WHERE parent_id = #{parentId}
+    </select>
+
+    <!-- 获取权限统计信息 -->
+    <select id="getTotalPermissionCount" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM permissions
+    </select>
+
+    <select id="getEnabledPermissionCount" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM permissions WHERE is_enabled = 1
+    </select>
+
+    <select id="getDisabledPermissionCount" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM permissions WHERE is_enabled = 0
+    </select>
+
+    <select id="getMenuPermissionCount" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM permissions WHERE category = 'MENU'
+    </select>
+
+    <select id="getApiPermissionCount" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM permissions WHERE category = 'API'
+    </select>
+
+    <select id="getButtonPermissionCount" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM permissions WHERE category = 'BUTTON'
+    </select>
+
+</mapper> 

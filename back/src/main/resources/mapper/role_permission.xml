@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.wwy.Mapper.RolePermissionMapper">
+
+    <!-- 基础字段映射 -->
+    <resultMap id="BaseResultMap" type="com.wwy.Entity.RolePermission">
+        <id property="id" column="id" jdbcType="INTEGER"/>
+        <result property="roleId" column="role_id" jdbcType="INTEGER"/>
+        <result property="permissionId" column="permission_id" jdbcType="INTEGER"/>
+        <result property="createdAt" column="created_at" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, role_id, permission_id, created_at
+    </sql>
+
+    <!-- 根据ID获取角色权限关联 -->
+    <select id="getRolePermissionById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM role_permissions
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据角色ID获取权限ID列表 -->
+    <select id="getPermissionIdsByRoleId" resultType="java.lang.Integer">
+        SELECT permission_id
+        FROM role_permissions
+        WHERE role_id = #{roleId}
+        ORDER BY permission_id ASC
+    </select>
+
+    <!-- 根据权限ID获取角色ID列表 -->
+    <select id="getRoleIdsByPermissionId" resultType="java.lang.Integer">
+        SELECT role_id
+        FROM role_permissions
+        WHERE permission_id = #{permissionId}
+        ORDER BY role_id ASC
+    </select>
+
+    <!-- 根据角色ID获取角色权限关联列表 -->
+    <select id="getRolePermissionsByRoleId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM role_permissions
+        WHERE role_id = #{roleId}
+        ORDER BY id ASC
+    </select>
+
+    <!-- 根据权限ID获取角色权限关联列表 -->
+    <select id="getRolePermissionsByPermissionId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM role_permissions
+        WHERE permission_id = #{permissionId}
+        ORDER BY id ASC
+    </select>
+
+    <!-- 检查角色权限关联是否存在 -->
+    <select id="checkRolePermissionExists" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM role_permissions
+        WHERE role_id = #{roleId} AND permission_id = #{permissionId}
+    </select>
+
+    <!-- 插入角色权限关联 -->
+    <insert id="insertRolePermission" parameterType="com.wwy.Entity.RolePermission" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO role_permissions (role_id, permission_id)
+        VALUES (#{roleId}, #{permissionId})
+    </insert>
+
+    <!-- 批量插入角色权限关联 -->
+    <insert id="batchInsertRolePermissions">
+        INSERT INTO role_permissions (role_id, permission_id)
+        VALUES
+        <foreach collection="rolePermissions" item="rp" separator=",">
+            (#{rp.roleId}, #{rp.permissionId})
+        </foreach>
+    </insert>
+
+    <!-- 删除角色权限关联 -->
+    <delete id="deleteRolePermission">
+        DELETE FROM role_permissions WHERE id = #{id}
+    </delete>
+
+    <!-- 根据角色ID删除权限关联 -->
+    <delete id="deleteRolePermissionsByRoleId">
+        DELETE FROM role_permissions WHERE role_id = #{roleId}
+    </delete>
+
+    <!-- 根据权限ID删除角色关联 -->
+    <delete id="deleteRolePermissionsByPermissionId">
+        DELETE FROM role_permissions WHERE permission_id = #{permissionId}
+    </delete>
+
+    <!-- 删除指定角色权限关联 -->
+    <delete id="deleteRolePermissionByRoleAndPermission">
+        DELETE FROM role_permissions 
+        WHERE role_id = #{roleId} AND permission_id = #{permissionId}
+    </delete>
+
+    <!-- 批量删除角色权限关联 -->
+    <delete id="batchDeleteRolePermissions">
+        DELETE FROM role_permissions WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 为角色分配权限（先删除旧的，再插入新的） -->
+    <insert id="assignPermissionsToRole">
+        <!-- 先删除该角色的所有权限 -->
+        DELETE FROM role_permissions WHERE role_id = #{roleId};
+        
+        <!-- 再插入新的权限关联 -->
+        <if test="permissionIds != null and permissionIds.size() > 0">
+            INSERT INTO role_permissions (role_id, permission_id)
+            VALUES
+            <foreach collection="permissionIds" item="permissionId" separator=",">
+                (#{roleId}, #{permissionId})
+            </foreach>
+        </if>
+    </insert>
+
+    <!-- 获取角色权限关联统计信息 -->
+    <select id="getTotalRolePermissionCount" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM role_permissions
+    </select>
+
+    <select id="getRolePermissionCountByRoleId" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM role_permissions WHERE role_id = #{roleId}
+    </select>
+
+    <select id="getRolePermissionCountByPermissionId" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM role_permissions WHERE permission_id = #{permissionId}
+    </select>
+
+</mapper> 

@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wwy.Mapper.ArticleMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.wwy.Entity.Article">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="title" property="title" jdbcType="VARCHAR"/>
+        <result column="content" property="content" jdbcType="LONGVARCHAR"/>
+        <result column="summary" property="summary" jdbcType="LONGVARCHAR"/>
+        <result column="cover_image" property="coverImage" jdbcType="VARCHAR"/>
+        <result column="author_id" property="authorId" jdbcType="INTEGER"/>
+        <result column="author_name" property="authorName" jdbcType="VARCHAR"/>
+        <result column="category_id" property="categoryId" jdbcType="INTEGER"/>
+        <result column="category_name" property="categoryName" jdbcType="VARCHAR"/>
+        <result column="tags" property="tags" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="VARCHAR"/>
+        <result column="view_count" property="viewCount" jdbcType="INTEGER"/>
+        <result column="like_count" property="likeCount" jdbcType="INTEGER"/>
+        <result column="comment_count" property="commentCount" jdbcType="INTEGER"/>
+        <result column="is_top" property="isTop" jdbcType="BOOLEAN"/>
+        <result column="is_recommend" property="isRecommend" jdbcType="BOOLEAN"/>
+        <result column="publish_time" property="publishTime" jdbcType="TIMESTAMP"/>
+        <result column="created_at" property="createdAt" jdbcType="TIMESTAMP"/>
+        <result column="updated_at" property="updatedAt" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 通用字段 -->
+    <sql id="Base_Column_List">
+        id, title, content, summary, cover_image, author_id, author_name,
+        category_id, category_name, tags, status, view_count, like_count,
+        comment_count, is_top, is_recommend, publish_time, created_at, updated_at
+    </sql>
+
+    <!-- 根据ID获取文章 -->
+    <select id="getArticleById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM articles
+        WHERE id = #{id}
+    </select>
+
+    <!-- 获取所有文章列表 -->
+    <select id="getAllArticles" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM articles
+        ORDER BY is_top DESC, publish_time DESC, created_at DESC
+    </select>
+
+    <!-- 分页搜索文章 -->
+    <select id="searchArticles" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM articles
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (title LIKE CONCAT('%', #{keyword}, '%') OR content LIKE CONCAT('%', #{keyword}, '%') OR tags LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            <if test="categoryId != null">
+                AND category_id = #{categoryId}
+            </if>
+            <if test="authorId != null">
+                AND author_id = #{authorId}
+            </if>
+            <if test="isTop != null">
+                AND is_top = #{isTop}
+            </if>
+            <if test="isRecommend != null">
+                AND is_recommend = #{isRecommend}
+            </if>
+        </where>
+        ORDER BY is_top DESC, publish_time DESC, created_at DESC
+        <if test="offset != null and pageSize != null">
+            LIMIT #{offset}, #{pageSize}
+        </if>
+    </select>
+
+    <!-- 获取搜索文章总数 -->
+    <select id="countSearchArticles" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM articles
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (title LIKE CONCAT('%', #{keyword}, '%') OR content LIKE CONCAT('%', #{keyword}, '%') OR tags LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            <if test="categoryId != null">
+                AND category_id = #{categoryId}
+            </if>
+            <if test="authorId != null">
+                AND author_id = #{authorId}
+            </if>
+            <if test="isTop != null">
+                AND is_top = #{isTop}
+            </if>
+            <if test="isRecommend != null">
+                AND is_recommend = #{isRecommend}
+            </if>
+        </where>
+    </select>
+
+    <!-- 插入文章 -->
+    <insert id="insertArticle" parameterType="com.wwy.Entity.Article" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO articles (
+            title, content, summary, cover_image, author_id, author_name,
+            category_id, category_name, tags, status, view_count, like_count,
+            comment_count, is_top, is_recommend, publish_time, created_at, updated_at
+        ) VALUES (
+            #{title}, #{content}, #{summary}, #{coverImage}, #{authorId}, #{authorName},
+            #{categoryId}, #{categoryName}, #{tags}, #{status}, #{viewCount}, #{likeCount},
+            #{commentCount}, #{isTop}, #{isRecommend}, #{publishTime}, NOW(), NOW()
+        )
+    </insert>
+
+    <!-- 更新文章 -->
+    <update id="updateArticle" parameterType="com.wwy.Entity.Article">
+        UPDATE articles
+        SET title = #{title},
+            content = #{content},
+            summary = #{summary},
+            cover_image = #{coverImage},
+            category_id = #{categoryId},
+            category_name = #{categoryName},
+            tags = #{tags},
+            status = #{status},
+            is_top = #{isTop},
+            is_recommend = #{isRecommend},
+            publish_time = #{publishTime},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 删除文章 -->
+    <delete id="deleteArticle">
+        DELETE FROM articles WHERE id = #{id}
+    </delete>
+
+    <!-- 批量删除文章 -->
+    <delete id="batchDeleteArticles">
+        DELETE FROM articles
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 更新文章状态 -->
+    <update id="updateArticleStatus">
+        UPDATE articles
+        SET status = #{status},
+            <if test="status == 'published'">
+                publish_time = NOW(),
+            </if>
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 批量更新文章状态 -->
+    <update id="batchUpdateArticleStatus">
+        UPDATE articles
+        SET status = #{status},
+            <if test="status == 'published'">
+                publish_time = NOW(),
+            </if>
+            updated_at = NOW()
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- 增加文章阅读量 -->
+    <update id="incrementViewCount">
+        UPDATE articles
+        SET view_count = view_count + 1,
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 增加文章点赞数 -->
+    <update id="incrementLikeCount">
+        UPDATE articles
+        SET like_count = like_count + 1,
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 更新文章置顶状态 -->
+    <update id="updateTopStatus">
+        UPDATE articles
+        SET is_top = #{isTop},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 更新文章推荐状态 -->
+    <update id="updateRecommendStatus">
+        UPDATE articles
+        SET is_recommend = #{isRecommend},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 根据分类ID获取文章列表 -->
+    <select id="getArticlesByCategory" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM articles
+        WHERE category_id = #{categoryId} AND status = 'published'
+        ORDER BY is_top DESC, publish_time DESC
+    </select>
+
+    <!-- 根据作者ID获取文章列表 -->
+    <select id="getArticlesByAuthor" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM articles
+        WHERE author_id = #{authorId}
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 获取热门文章（按阅读量排序） -->
+    <select id="getHotArticles" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM articles
+        WHERE status = 'published'
+        ORDER BY view_count DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 获取推荐文章 -->
+    <select id="getRecommendArticles" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM articles
+        WHERE status = 'published' AND is_recommend = 1
+        ORDER BY publish_time DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 获取置顶文章 -->
+    <select id="getTopArticles" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM articles
+        WHERE status = 'published' AND is_top = 1
+        ORDER BY publish_time DESC
+    </select>
+
+</mapper> 
