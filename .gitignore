@@ -1,0 +1,90 @@
+# Maven
+back/target/
+back/*.jar
+back/*.war
+back/*.ear
+back/*.zip
+back/*.tar.gz
+back/*.rar
+
+# Node.js
+front/node_modules/
+front/dist/
+front/.cache/
+front/.parcel-cache/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+front/npm-debug.log*
+front/yarn-debug.log*
+front/yarn-error.log*
+
+# Runtime data
+front/pids
+front/*.pid
+front/*.seed
+front/*.pid.lock
+
+# Coverage directory used by tools like istanbul
+front/coverage
+
+# nyc test coverage
+front/.nyc_output
+
+# Bower dependency directory (https://bower.io/)
+front/bower_components
+
+# node-waf configuration
+front/.lock-wscript
+
+# Compiled binary addons (https://nodejs.org/api/addons.html)
+front/build/Release
+
+# Dependency directories
+front/jspm_packages/
+
+# TypeScript v1 declaration files
+front/typings/
+
+# Optional npm cache directory
+front/.npm
+
+# Optional eslint cache
+front/.eslintcache
+
+# Optional REPL history
+front/.node_repl_history
+
+# Output of 'npm pack'
+front/*.tgz
+
+# Yarn Integrity file
+front/.yarn-integrity
+
+# dotenv environment variables file
+.env
+.env.test
+
+# Upload files
+back/uploads/
+back/front/public/picture/
+
+# Temporary files
+*.tmp
+*.temp 
